@@ -12,6 +12,12 @@ import { notFound, errorHandler } from './middlewares/errorMiddleware';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+import cors from 'cors';
+app.use(cors({
+    origin: 'http://localhost:3001',
+    credentials: true
+}));
+
 app.use(express.json());
 app.use(cookieParser());
 
