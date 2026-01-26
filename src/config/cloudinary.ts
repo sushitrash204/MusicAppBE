@@ -1,6 +1,6 @@
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const multer = require('multer');
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import multer from 'multer';
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -15,9 +15,9 @@ const storage = new CloudinaryStorage({
         resource_type: 'auto',
         allowed_formats: ['jpg', 'png', 'mp3', 'wav'],
         transformation: [{ quality: 'auto', fetch_format: 'auto' }]
-    }
+    } as any // Cast to any because the types might not perfectly align with the library's latest features or custom params
 });
 
 const uploadCloud = multer({ storage });
 
-module.exports = uploadCloud;
+export default uploadCloud;
