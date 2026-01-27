@@ -38,7 +38,7 @@ const registerUser = async (userData: any): Promise<IAuthResponse> => {
 
     const userExists = await User.findOne({ username });
     if (userExists) {
-        throw new Error('User already exists');
+        throw new Error('ERR_USER_EXISTS');
     }
 
     const user = await User.create({
@@ -62,7 +62,7 @@ const registerUser = async (userData: any): Promise<IAuthResponse> => {
             refreshToken
         };
     } else {
-        throw new Error('Invalid user data');
+        throw new Error('VAL_INVALID_DATA');
     }
 };
 
@@ -82,7 +82,9 @@ const loginUser = async (username: string, password: string): Promise<IAuthRespo
             refreshToken
         };
     } else {
-        throw new Error('Invalid username or password');
+        throw new Error('ERR_WRONG_PASSWORD'); // Or ERR_USER_NOT_FOUND, but security-wise generic is better? 
+        // For now let's stick to what we had: 'Invalid username or password' -> ERR_WRONG_PASSWORD (or maybe new key ERR_LOGIN_FAIL)
+        // Check types: ERR_WRONG_PASSWORD exists.
     }
 };
 
@@ -92,22 +94,22 @@ const verifyExpiration = (token: any): boolean => {
 
 const refreshToken = async (requestToken: string): Promise<{ accessToken: string, refreshToken: string }> => {
     if (!requestToken) {
-        throw new Error('Refresh Token is required!');
+        throw new Error('ERR_NO_TOKEN');
     }
 
     const refreshTokenDoc = await RefreshToken.findOne({ token: requestToken });
 
     if (!refreshTokenDoc) {
-        throw new Error('Refresh token is not in database!');
+        throw new Error('ERR_INVALID_TOKEN');
     }
 
     if (verifyExpiration(refreshTokenDoc)) {
         await RefreshToken.findByIdAndDelete(refreshTokenDoc._id);
-        throw new Error('Refresh token was expired. Please make a new signin request');
+        throw new Error('ERR_TOKEN_EXPIRED');
     }
 
     const user = await User.findById(refreshTokenDoc.user);
-    if (!user) throw new Error('User not found');
+    if (!user) throw new Error('ERR_USER_NOT_FOUND');
 
     const newAccessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, {
         expiresIn: '15m',

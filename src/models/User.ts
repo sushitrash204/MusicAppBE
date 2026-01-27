@@ -9,6 +9,7 @@ export interface IUser extends Document {
     emails: string[];
     isPremium: boolean;
     role: 'user' | 'admin';
+    avatar: string; // URL photo
     premiumExpiryDate?: Date;
     createdAt: Date;
     matchPassword(enteredPassword: string): Promise<boolean>;
@@ -35,6 +36,10 @@ const userSchema = new mongoose.Schema<IUser>({
     emails: [{
         type: String
     }],
+    avatar: {
+        type: String,
+        default: 'https://res.cloudinary.com/daz3r4rqn/image/upload/v1737960000/default-avatar_qjgxc9.png' // Replace with your default avatar URL
+    },
     isPremium: {
         type: Boolean,
         default: false

@@ -21,6 +21,10 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Rate Limiting
+import { globalLimiter } from './middlewares/rateLimitMiddleware';
+app.use(globalLimiter);
+
 // Connect to Database
 connectDB();
 
