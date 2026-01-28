@@ -43,4 +43,13 @@ const protect = async (req: Request, res: Response, next: NextFunction): Promise
     }
 };
 
-export { protect };
+const admin = (req: Request, res: Response, next: NextFunction) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        res.status(401);
+        next(new Error('Not authorized as an admin'));
+    }
+};
+
+export { protect, admin };

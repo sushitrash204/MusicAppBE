@@ -8,7 +8,8 @@ interface IAuthResponse {
     fullName: string;
     username: string;
     email: string[];
-    isAdmin: boolean;
+    phone: string;
+    role: string;
     accessToken: string;
     refreshToken: string;
 }
@@ -57,7 +58,8 @@ const registerUser = async (userData: any): Promise<IAuthResponse> => {
             fullName: user.fullName,
             username: user.username,
             email: user.emails,
-            isAdmin: user.role === 'admin',
+            phone: user.phoneNumber,
+            role: user.role,
             accessToken,
             refreshToken
         };
@@ -77,7 +79,8 @@ const loginUser = async (username: string, password: string): Promise<IAuthRespo
             fullName: user.fullName,
             username: user.username,
             email: user.emails,
-            isAdmin: user.role === 'admin',
+            phone: user.phoneNumber,
+            role: user.role,
             accessToken,
             refreshToken
         };

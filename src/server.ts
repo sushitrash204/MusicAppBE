@@ -41,7 +41,12 @@ app.post('/api/upload-test', uploadCloud.single('file'), async (req: Request, re
 });
 
 // Routes
+import artistRoutes from './routes/artistRoutes';
+import genreRoutes from './routes/genreRoutes';
+
 app.use('/api/auth', authRoutes);
+app.use('/api/artists', artistRoutes);
+app.use('/api/genres', genreRoutes);
 
 // Middlewares
 app.use(notFound);

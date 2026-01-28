@@ -10,6 +10,9 @@ export const globalLimiter = rateLimit({
     message: {
         success: false,
         message: 'RATE_LIMIT_GLOBAL'
+    },
+    validate: {
+        trustProxy: false
     }
 });
 
@@ -21,6 +24,9 @@ export const authLimiter = rateLimit({
     message: {
         success: false,
         message: 'RATE_LIMIT_AUTH'
+    },
+    validate: {
+        trustProxy: false
     }
 });
 
@@ -30,11 +36,11 @@ export const loginLimiter = rateLimit({
     skipSuccessfulRequests: true,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => {
-        return req.ip + "_" + (req.body.username || '');
-    },
     message: {
         success: false,
         message: 'RATE_LIMIT_LOGIN'
+    },
+    validate: {
+        trustProxy: false
     }
 });
