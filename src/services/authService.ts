@@ -1,6 +1,7 @@
 import User, { IUser } from '../models/User';
 import jwt from 'jsonwebtoken';
 import RefreshToken from '../models/RefreshToken';
+import Artist from '../models/Artist';
 import { v4 as uuidv4 } from 'uuid';
 
 interface IAuthResponse {
@@ -10,6 +11,7 @@ interface IAuthResponse {
     email: string[];
     phone: string;
     role: string;
+    isArtist: boolean;
     accessToken: string;
     refreshToken: string;
 }
@@ -52,6 +54,7 @@ const registerUser = async (userData: any): Promise<IAuthResponse> => {
 
     if (user) {
         const { accessToken, refreshToken } = await generateTokens(user._id);
+        const artistDoc = await Artist.exists({ userId: user._id, status: 'active' });
 
         return {
             _id: user._id,
@@ -60,6 +63,7 @@ const registerUser = async (userData: any): Promise<IAuthResponse> => {
             email: user.emails,
             phone: user.phoneNumber,
             role: user.role,
+            isArtist: !!artistDoc,
             accessToken,
             refreshToken
         };
@@ -73,6 +77,7 @@ const loginUser = async (username: string, password: string): Promise<IAuthRespo
 
     if (user && (await user.matchPassword(password))) {
         const { accessToken, refreshToken } = await generateTokens(user._id);
+        const artistDoc = await Artist.exists({ userId: user._id, status: 'active' });
 
         return {
             _id: user._id,
@@ -81,6 +86,7 @@ const loginUser = async (username: string, password: string): Promise<IAuthRespo
             email: user.emails,
             phone: user.phoneNumber,
             role: user.role,
+            isArtist: !!artistDoc,
             accessToken,
             refreshToken
         };
@@ -117,11 +123,13 @@ const refreshToken = async (requestToken: string): Promise<{ accessToken: string
     const newAccessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, {
         expiresIn: '15m',
     });
+    const artistDoc = await Artist.exists({ userId: user._id, status: 'active' });
 
     return {
         accessToken: newAccessToken,
         refreshToken: refreshTokenDoc.token,
-    };
+        isArtist: !!artistDoc
+    } as any; // Cast to any or verify return type match
 };
 
 export default {
