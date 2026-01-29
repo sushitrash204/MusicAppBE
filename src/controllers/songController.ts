@@ -7,8 +7,7 @@ export const createSong = async (req: Request, res: Response) => {
         const userId = (req as any).user._id;
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
-        console.log('Received files:', files); // Debug
-        console.log('Received body:', req.body); // Debug
+        // Logs removed for cleanliness
 
         // Extract file URLs from multer/cloudinary
         const audioUrl = files?.audio?.[0]?.path || '';
@@ -76,7 +75,7 @@ export const getMySongs = async (req: Request, res: Response) => {
         if (error.message === 'Artist profile not found.') {
             res.status(404).json({ message: error.message });
         } else {
-            res.status(500).json({ message: error.message });
+            res.status(500).json({ message: error.message || 'Internal Server Error' });
         }
     }
 };
@@ -86,7 +85,18 @@ export const updateSong = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const userId = (req as any).user._id;
-        const updatedSong = await songService.updateSong(userId, id as string, req.body);
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+        const updateData = { ...req.body };
+
+        if (files?.audio?.[0]?.path) {
+            updateData.audioUrl = files.audio[0].path;
+        }
+        if (files?.cover?.[0]?.path) {
+            updateData.coverImage = files.cover[0].path;
+        }
+
+        const updatedSong = await songService.updateSong(userId, id as string, updateData);
         res.status(200).json(updatedSong);
     } catch (error: any) {
         if (error.message === 'Song not found.') {
@@ -114,5 +124,19 @@ export const deleteSong = async (req: Request, res: Response) => {
         } else {
             res.status(500).json({ message: error.message });
         }
+    }
+};
+
+// Get a single song by ID
+export const getSongById = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const song = await songService.getSongById(id as string);
+        if (!song) {
+            return res.status(404).json({ message: 'Song not found.' });
+        }
+        res.status(200).json(song);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
     }
 };

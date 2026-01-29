@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Song from '../models/Song';
 import Artist from '../models/Artist';
 
@@ -56,11 +57,25 @@ export const getSongsByArtistId = async (artistId: string) => {
 };
 
 export const getSongsByArtist = async (userId: string) => {
-    const artist = await Artist.findOne({ userId });
+    if (!userId) {
+        throw new Error('UserId is missing');
+    }
+
+    // Convert userId string to ObjectId for Artist query
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    // Find artist by userId (as ObjectId)
+    const artist = await Artist.findOne({ userId: userObjectId });
+
     if (!artist) {
         throw new Error('Artist profile not found.');
     }
-    return await Song.find({ artists: artist._id }).sort({ createdAt: -1 });
+
+    // Query songs where artists array contains the artist ID (as ObjectId)
+    return await Song.find({ artists: artist._id })
+        .sort({ createdAt: -1 })
+        .populate('artists', 'artistName')
+        .lean();
 };
 
 export const updateSong = async (userId: string, songId: string, updateData: any) => {
@@ -77,6 +92,14 @@ export const updateSong = async (userId: string, songId: string, updateData: any
     const isOwner = song.artists.some((aId) => aId.toString() === artist._id.toString());
     if (!isOwner) {
         throw new Error('You can only edit your own songs.');
+    }
+
+    // Parse arrays if they come as JSON strings
+    if (updateData.artists) {
+        updateData.artists = typeof updateData.artists === 'string' ? JSON.parse(updateData.artists) : updateData.artists;
+    }
+    if (updateData.genres) {
+        updateData.genres = typeof updateData.genres === 'string' ? JSON.parse(updateData.genres) : updateData.genres;
     }
 
     Object.assign(song, updateData);
@@ -101,4 +124,10 @@ export const deleteSong = async (userId: string, songId: string) => {
 
     await Song.deleteOne({ _id: songId });
     return { message: 'Song deleted successfully.' };
+};
+
+export const getSongById = async (id: string) => {
+    return await Song.findById(id)
+        .populate('artists', 'artistName')
+        .populate('genres', 'name');
 };
