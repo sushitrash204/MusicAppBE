@@ -43,6 +43,27 @@ export const getMyArtistProfile = async (req: Request, res: Response) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+// Update current user's artist profile
+export const updateArtistProfile = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user._id;
+        const { artistName, bio } = req.body;
+
+        const artist = await Artist.findOne({ userId });
+        if (!artist) {
+            return res.status(404).json({ message: 'Artist profile not found' });
+        }
+
+        if (artistName) artist.artistName = artistName;
+        if (bio !== undefined) artist.bio = bio;
+
+        await artist.save();
+        res.status(200).json(artist);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
 // Get all pending artist requests (Admin only)
 export const getAllPendingRequests = async (req: Request, res: Response) => {
     try {
@@ -86,6 +107,55 @@ export const rejectArtistRequest = async (req: Request, res: Response) => {
         await artist.save();
 
         res.status(200).json({ message: 'Artist request rejected', artist });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Get 10 random active artists (public)
+export const getArtists = async (req: Request, res: Response) => {
+    try {
+        const artists = await Artist.aggregate([
+            { $match: { status: 'active' } },
+            { $sample: { size: 10 } },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'userId',
+                    foreignField: '_id',
+                    as: 'userInfo'
+                }
+            },
+            { $unwind: '$userInfo' },
+            {
+                $project: {
+                    _id: 1,
+                    artistName: 1,
+                    bio: 1,
+                    userId: {
+                        fullName: '$userInfo.fullName',
+                        avatar: '$userInfo.avatar'
+                    }
+                }
+            }
+        ]);
+        res.status(200).json(artists);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Get artist by ID (public)
+export const getArtistById = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const artist = await Artist.findById(id).populate('userId', 'fullName avatar');
+
+        if (!artist) {
+            return res.status(404).json({ message: 'Artist not found' });
+        }
+
+        res.status(200).json(artist);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

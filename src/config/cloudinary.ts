@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
+import { v4 as uuidv4 } from 'uuid';
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -10,14 +11,19 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
     cloudinary,
-    params: {
-        folder: 'music_app_uploads',
-        resource_type: 'auto',
-        allowed_formats: ['jpg', 'png', 'mp3', 'wav'],
-        transformation: [{ quality: 'auto', fetch_format: 'auto' }]
-    } as any // Cast to any because the types might not perfectly align with the library's latest features or custom params
+    params: async (req, file) => {
+        const randomName = uuidv4();
+        return {
+            folder: 'music_app_uploads',
+            resource_type: 'auto' as any,
+            allowed_formats: ['jpg', 'png', 'mp3', 'wav', 'jpeg'],
+            public_id: randomName,
+            transformation: [{ quality: 'auto', fetch_format: 'auto' }]
+        };
+    }
 });
 
 const uploadCloud = multer({ storage });
 
 export default uploadCloud;
+

@@ -1,0 +1,118 @@
+import { Request, Response } from 'express';
+import * as songService from '../services/songService';
+
+// Create a new song with file uploads
+export const createSong = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user._id;
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+        console.log('Received files:', files); // Debug
+        console.log('Received body:', req.body); // Debug
+
+        // Extract file URLs from multer/cloudinary
+        const audioUrl = files?.audio?.[0]?.path || '';
+        const coverImage = files?.cover?.[0]?.path || '';
+
+        if (!audioUrl) {
+            console.error('No audio file found in request');
+            return res.status(400).json({
+                message: 'Audio file is required',
+                debug: {
+                    hasFiles: !!files,
+                    fileKeys: files ? Object.keys(files) : [],
+                    audioExists: !!files?.audio
+                }
+            });
+        }
+
+        const songData = {
+            ...req.body,
+            audioUrl,
+            coverImage
+        };
+
+        const newSong = await songService.createSong(userId, songData);
+        res.status(201).json(newSong);
+    } catch (error: any) {
+        console.error('Create song error:', error);
+        if (error.message === 'Only artists can add songs.') {
+            res.status(403).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: error.message });
+        }
+    }
+};
+
+// Get recent public songs (for homepage)
+export const getRecentSongs = async (req: Request, res: Response) => {
+    try {
+        const limit = parseInt(req.query.limit as string) || 10;
+        const songs = await songService.getRecentPublicSongs(limit);
+        res.status(200).json(songs);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Get public songs by artist ID (for artist profile)
+export const getSongsByArtistId = async (req: Request, res: Response) => {
+    try {
+        const { artistId } = req.params;
+        const songs = await songService.getSongsByArtistId(artistId as string);
+        res.status(200).json(songs);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Get songs by current artist
+export const getMySongs = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user._id;
+        const songs = await songService.getSongsByArtist(userId);
+        res.status(200).json(songs);
+    } catch (error: any) {
+        if (error.message === 'Artist profile not found.') {
+            res.status(404).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: error.message });
+        }
+    }
+};
+
+// Update a song
+export const updateSong = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const userId = (req as any).user._id;
+        const updatedSong = await songService.updateSong(userId, id as string, req.body);
+        res.status(200).json(updatedSong);
+    } catch (error: any) {
+        if (error.message === 'Song not found.') {
+            res.status(404).json({ message: error.message });
+        } else if (error.message === 'Access denied.' || error.message === 'You can only edit your own songs.') {
+            res.status(403).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: error.message });
+        }
+    }
+};
+
+// Delete a song
+export const deleteSong = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const userId = (req as any).user._id;
+        await songService.deleteSong(userId, id as string);
+        res.status(200).json({ message: 'Song deleted successfully.' });
+    } catch (error: any) {
+        if (error.message === 'Song not found.') {
+            res.status(404).json({ message: error.message });
+        } else if (error.message === 'Access denied.' || error.message === 'You can only delete your own songs.') {
+            res.status(403).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: error.message });
+        }
+    }
+};
