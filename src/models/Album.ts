@@ -42,5 +42,9 @@ const albumSchema = new mongoose.Schema<IAlbum>({
     timestamps: true
 });
 
+// Indexes
+albumSchema.index({ artist: 1 }); // Optimize query by artist
+albumSchema.index({ releaseDate: -1 });
+
 const Album: Model<IAlbum> = mongoose.model<IAlbum>('Album', albumSchema);
 export default Album;

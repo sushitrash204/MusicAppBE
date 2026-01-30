@@ -27,3 +27,26 @@ const uploadCloud = multer({ storage });
 
 export default uploadCloud;
 
+export const deleteCloudinaryFile = async (fileUrl: string) => {
+    if (!fileUrl) return;
+
+    try {
+        // Extract public_id from URL
+        // Example: https://res.cloudinary.com/cloudname/video/upload/v1234/folder/filename.mp4
+        const parts = fileUrl.split('/');
+        const fileName = parts[parts.length - 1];
+        const folderName = parts[parts.length - 2];
+
+        // Remove extension
+        const publicIdWithFolder = `${folderName}/${fileName.split('.')[0]}`;
+
+        // Determine resource type (image or video/audio)
+        const isImage = fileUrl.includes('/image/upload/');
+        const resourceType = isImage ? 'image' : 'video'; // Audio is treated as video in Cloudinary API usually, or 'raw'
+
+        await cloudinary.uploader.destroy(publicIdWithFolder, { resource_type: resourceType });
+        console.log(`Deleted Cloudinary file: ${publicIdWithFolder}`);
+    } catch (error) {
+        console.error('Error deleting Cloudinary file:', error);
+    }
+};

@@ -149,14 +149,19 @@ export const getArtists = async (req: Request, res: Response) => {
 export const getArtistById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        console.log('Backend: getArtistById called with ID:', id);
+
         const artist = await Artist.findById(id).populate('userId', 'fullName avatar');
 
         if (!artist) {
+            console.log('Backend: Artist not found for ID:', id);
             return res.status(404).json({ message: 'Artist not found' });
         }
 
+        console.log('Backend: Artist found:', artist._id);
         res.status(200).json(artist);
     } catch (error: any) {
+        console.error('Backend: getArtistById error:', error);
         res.status(500).json({ message: error.message });
     }
 };

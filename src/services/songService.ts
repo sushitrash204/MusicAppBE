@@ -78,6 +78,8 @@ export const getSongsByArtist = async (userId: string) => {
         .lean();
 };
 
+import { deleteCloudinaryFile } from '../config/cloudinary';
+
 export const updateSong = async (userId: string, songId: string, updateData: any) => {
     const artist = await Artist.findOne({ userId });
     if (!artist) {
@@ -92,6 +94,14 @@ export const updateSong = async (userId: string, songId: string, updateData: any
     const isOwner = song.artists.some((aId) => aId.toString() === artist._id.toString());
     if (!isOwner) {
         throw new Error('You can only edit your own songs.');
+    }
+
+    // Delete old files if new ones are provided
+    if (updateData.audioUrl && song.audioUrl && updateData.audioUrl !== song.audioUrl) {
+        await deleteCloudinaryFile(song.audioUrl);
+    }
+    if (updateData.coverImage && song.coverImage && updateData.coverImage !== song.coverImage) {
+        await deleteCloudinaryFile(song.coverImage);
     }
 
     // Parse arrays if they come as JSON strings
@@ -122,7 +132,31 @@ export const deleteSong = async (userId: string, songId: string) => {
         throw new Error('You can only delete your own songs.');
     }
 
+    // Delete files from Cloudinary
+    if (song.audioUrl) {
+        await deleteCloudinaryFile(song.audioUrl);
+    }
+    if (song.coverImage) {
+        await deleteCloudinaryFile(song.coverImage);
+    }
+
     await Song.deleteOne({ _id: songId });
+
+    // Remove song from any albums that contain it
+    // Note: We need to import Album model, but circular dependency might be an issue if Album imports Song.
+    // songService imports Album? No.
+    // Let's use mongoose.model('Album') to avoid circular imports at top level if needed, 
+    // or just import it if no cycle. SongService imports Artist. AlbumService imports Song.
+    // Cycle: AlbumService -> Song -> ?
+    // SongService doesn't import AlbumService.
+
+    // Using mongoose.model to be safe or simple import.
+    const Album = mongoose.model('Album');
+    await Album.updateMany(
+        { songs: songId },
+        { $pull: { songs: songId } }
+    );
+
     return { message: 'Song deleted successfully.' };
 };
 

@@ -80,6 +80,7 @@ const songSchema = new mongoose.Schema<ISong>({
 songSchema.index({ title: 'text', lyrics: 'text' });
 songSchema.index({ plays: -1 });
 songSchema.index({ releaseDate: -1 });
+songSchema.index({ artists: 1 }); // Optimize query by artist
 
 const Song: Model<ISong> = mongoose.model<ISong>('Song', songSchema);
 export default Song;

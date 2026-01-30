@@ -46,6 +46,8 @@ import genreRoutes from './routes/genreRoutes';
 import songRoutes from './routes/songRoutes';
 import favoriteRoutes from './routes/favoriteRoutes';
 import playlistRoutes from './routes/playlistRoutes';
+import albumRoutes from './routes/albumRoutes';
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api/artists', artistRoutes);
@@ -53,6 +55,8 @@ app.use('/api/genres', genreRoutes);
 app.use('/api/songs', songRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/playlists', playlistRoutes);
+app.use('/api/albums', albumRoutes);
+
 
 // Middlewares
 app.use(notFound);
