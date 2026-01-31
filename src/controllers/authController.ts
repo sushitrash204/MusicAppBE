@@ -3,15 +3,15 @@ import authService from '../services/authService';
 import RefreshToken from '../models/RefreshToken';
 
 const setRefreshTokenCookie = (res: Response, refreshToken: string) => {
-    const cookieOptions = {
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict' as const,
+        secure: isProduction, // Phải là true khi dùng sameSite: 'none'
+        sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax',
         path: '/'
-    };
-
-    res.cookie('refreshToken', refreshToken, cookieOptions);
+    });
 };
 
 // @desc    Register a new user
@@ -89,10 +89,11 @@ const logoutUser = async (req: Request, res: Response, next: NextFunction) => {
             console.log('No refresh token in cookie');
         }
 
+        const isProduction = process.env.NODE_ENV === 'production';
         res.clearCookie('refreshToken', {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            secure: isProduction,
+            sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax',
             path: '/'
         });
 
