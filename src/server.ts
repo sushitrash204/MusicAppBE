@@ -30,6 +30,10 @@ import { notFound, errorHandler } from './middlewares/errorMiddleware';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.listen(PORT, () => {
+    console.log(`🚀 Server is running on port ${PORT}`);
+});
+
 const allowedOrigins = [
     'http://localhost:3001',
     'http://localhost:3000',
@@ -111,7 +115,3 @@ cloudinary.api.ping()
     .catch(error => console.error('Cloudinary connection failed:', error.message));
 
 export default app;
-
-app.listen(PORT, () => {
-    console.log(`🚀 Server is running on port ${PORT}`);
-});
