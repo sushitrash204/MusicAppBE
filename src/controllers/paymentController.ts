@@ -3,6 +3,10 @@ import User from '../models/User';
 
 export const handleSepayWebhook = async (req: Request, res: Response) => {
     try {
+        console.log('--- RAW SEPAY WEBHOOK DATA ---');
+        console.log('Headers:', JSON.stringify(req.headers));
+        console.log('Body:', JSON.stringify(req.body));
+        console.log('------------------------------');
         console.log('Received SePay Webhook:', req.body);
 
         // Security Check: Verify API Key
