@@ -93,6 +93,10 @@ cloudinary.api.ping()
     .then(result => console.log('Cloudinary connection status:', result.status))
     .catch(error => console.error('Cloudinary connection failed:', error.message));
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+export default app;
+
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
+}
