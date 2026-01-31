@@ -32,19 +32,31 @@ const PORT = process.env.PORT || 3000;
 
 const allowedOrigins = [
     'http://localhost:3001',
-    'https://music-web-smoky.vercel.app'
+    'http://localhost:3000',
+    'https://music-web-smoky.vercel.app',
+    'https://music-web-smoky-nghias-projects-d7d85bef.vercel.app' // Vercel preview domain
 ];
 
 app.use(cors({
     origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) === -1) {
-            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-            return callback(new Error(msg), false);
+
+        // Simple check: allow localhost or our production domain
+        const isAllowed = allowedOrigins.includes(origin) ||
+            origin.endsWith('.vercel.app') ||
+            origin.startsWith('http://localhost');
+
+        if (isAllowed) {
+            callback(null, true);
+        } else {
+            console.log('CORS Blocked Origin:', origin);
+            callback(new Error('Not allowed by CORS'));
         }
-        return callback(null, true);
     },
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 app.use(express.json());
