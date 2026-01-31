@@ -13,13 +13,21 @@ export const getMyPlaylists = async (userId: string) => {
 };
 
 export const getPlaylistById = async (id: string) => {
-    return await Playlist.findById(id).populate('songs').populate('owner', 'username fullName');
+    return await Playlist.findById(id)
+        .populate({
+            path: 'songs',
+            populate: {
+                path: 'artists',
+                select: 'artistName'
+            }
+        })
+        .populate('owner', 'username fullName');
 };
 
 export const updatePlaylist = async (userId: string, id: string, data: any) => {
     const playlist = await Playlist.findById(id);
     if (!playlist) throw new Error('Playlist not found');
-    if (playlist.owner.toString() !== userId) throw new Error('Unauthorized');
+    if (playlist.owner.toString() !== userId.toString()) throw new Error('Unauthorized');
 
     Object.assign(playlist, data);
     return await playlist.save();
@@ -28,7 +36,7 @@ export const updatePlaylist = async (userId: string, id: string, data: any) => {
 export const deletePlaylist = async (userId: string, id: string) => {
     const playlist = await Playlist.findById(id);
     if (!playlist) throw new Error('Playlist not found');
-    if (playlist.owner.toString() !== userId) throw new Error('Unauthorized');
+    if (playlist.owner.toString() !== userId.toString()) throw new Error('Unauthorized');
 
     return await Playlist.deleteOne({ _id: id });
 };
@@ -36,9 +44,9 @@ export const deletePlaylist = async (userId: string, id: string) => {
 export const addSongToPlaylist = async (userId: string, playlistId: string, songId: string) => {
     const playlist = await Playlist.findById(playlistId);
     if (!playlist) throw new Error('Playlist not found');
-    if (playlist.owner.toString() !== userId) throw new Error('Unauthorized');
+    if (playlist.owner.toString() !== userId.toString()) throw new Error('Unauthorized');
 
-    if (!playlist.songs.includes(songId as any)) {
+    if (!playlist.songs.map(id => id.toString()).includes(songId)) {
         playlist.songs.push(songId as any);
     }
     return await playlist.save();
@@ -47,8 +55,8 @@ export const addSongToPlaylist = async (userId: string, playlistId: string, song
 export const removeSongFromPlaylist = async (userId: string, playlistId: string, songId: string) => {
     const playlist = await Playlist.findById(playlistId);
     if (!playlist) throw new Error('Playlist not found');
-    if (playlist.owner.toString() !== userId) throw new Error('Unauthorized');
+    if (playlist.owner.toString() !== userId.toString()) throw new Error('Unauthorized');
 
-    playlist.songs = playlist.songs.filter(sId => sId.toString() !== songId);
+    playlist.songs = playlist.songs.filter(sId => sId.toString() !== songId.toString());
     return await playlist.save();
 };

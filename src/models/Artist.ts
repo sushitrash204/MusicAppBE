@@ -45,5 +45,9 @@ const artistSchema = new mongoose.Schema<IArtist>({
     }
 });
 
+// Indexes
+artistSchema.index({ artistName: 'text', bio: 'text' });
+artistSchema.index({ totalStreams: -1 });
+
 const Artist: Model<IArtist> = mongoose.model<IArtist>('Artist', artistSchema);
 export default Artist;

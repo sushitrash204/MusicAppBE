@@ -133,13 +133,21 @@ export const getArtists = async (req: Request, res: Response) => {
                     artistName: 1,
                     bio: 1,
                     userId: {
+                        _id: '$userInfo._id',
                         fullName: '$userInfo.fullName',
                         avatar: '$userInfo.avatar'
                     }
                 }
             }
         ]);
-        res.status(200).json(artists);
+
+        const currentUserId = (req as any).user?._id;
+        const artistsWithIsMe = artists.map(artist => ({
+            ...artist,
+            isMe: currentUserId && artist.userId._id.toString() === currentUserId.toString()
+        }));
+
+        res.status(200).json(artistsWithIsMe);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
@@ -159,7 +167,12 @@ export const getArtistById = async (req: Request, res: Response) => {
         }
 
         console.log('Backend: Artist found:', artist._id);
-        res.status(200).json(artist);
+
+        const currentUserId = (req as any).user?._id;
+        const artistObj = artist.toObject();
+        (artistObj as any).isMe = currentUserId && artist.userId._id.toString() === currentUserId.toString();
+
+        res.status(200).json(artistObj);
     } catch (error: any) {
         console.error('Backend: getArtistById error:', error);
         res.status(500).json({ message: error.message });

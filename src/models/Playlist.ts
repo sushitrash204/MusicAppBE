@@ -42,5 +42,8 @@ const playlistSchema = new mongoose.Schema<IPlaylist>({
     timestamps: true
 });
 
+// Indexes
+playlistSchema.index({ title: 'text', description: 'text' });
+
 const Playlist: Model<IPlaylist> = mongoose.model<IPlaylist>('Playlist', playlistSchema);
 export default Playlist;

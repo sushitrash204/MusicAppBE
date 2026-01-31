@@ -17,6 +17,7 @@ import playlistRoutes from './routes/playlistRoutes';
 import albumRoutes from './routes/albumRoutes';
 import searchRoutes from './routes/searchRoutes';
 import userRoutes from './routes/userRoutes';
+import paymentRoutes from './routes/paymentRoutes';
 import { notFound, errorHandler } from './middlewares/errorMiddleware';
 
 const app = express();
@@ -83,6 +84,7 @@ app.use('/api/favorites', favoriteRoutes);
 app.use('/api/playlists', playlistRoutes);
 app.use('/api/albums', albumRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/payment', paymentRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

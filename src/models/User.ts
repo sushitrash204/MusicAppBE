@@ -12,6 +12,8 @@ export interface IUser extends Document {
     avatar: string; // URL photo
     premiumExpiryDate?: Date;
     createdAt: Date;
+    songsPlayedSinceLastAd?: number;
+    lastAdTrigger?: Date | null;
     matchPassword(enteredPassword: string): Promise<boolean>;
 }
 
@@ -55,6 +57,15 @@ const userSchema = new mongoose.Schema<IUser>({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    // Các trường bắt buộc xem quảng cáo
+    songsPlayedSinceLastAd: {
+        type: Number,
+        default: 0
+    },
+    lastAdTrigger: {
+        type: Date,
+        default: null
     }
 });
 

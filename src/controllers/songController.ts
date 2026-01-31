@@ -54,6 +54,17 @@ export const getRecentSongs = async (req: Request, res: Response) => {
     }
 };
 
+// Get popular public songs (for homepage)
+export const getPopularSongs = async (req: Request, res: Response) => {
+    try {
+        const limit = parseInt(req.query.limit as string) || 10;
+        const songs = await songService.getPopularPublicSongs(limit);
+        res.status(200).json(songs);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // Get public songs by artist ID (for artist profile)
 export const getSongsByArtistId = async (req: Request, res: Response) => {
     try {
@@ -127,7 +138,6 @@ export const deleteSong = async (req: Request, res: Response) => {
     }
 };
 
-// Get a single song by ID
 export const getSongById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
@@ -137,6 +147,31 @@ export const getSongById = async (req: Request, res: Response) => {
         }
         res.status(200).json(song);
     } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const initPlay = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user._id;
+        const { id: songId } = req.params;
+        const sessionId = await songService.startPlaySession(userId, songId as string);
+        res.status(200).json({ sessionId });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const confirmPlay = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user._id;
+        const { sessionId } = req.params;
+        const result = await songService.confirmPlaySession(userId, sessionId as string);
+        res.status(200).json(result);
+    } catch (error: any) {
+        if (error.message.includes('fraud detected')) {
+            return res.status(403).json({ message: error.message });
+        }
         res.status(500).json({ message: error.message });
     }
 };

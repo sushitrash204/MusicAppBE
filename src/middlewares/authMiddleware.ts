@@ -21,7 +21,12 @@ const protect = async (req: Request, res: Response, next: NextFunction): Promise
             const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as IDecodedToken;
 
             // Get user from the token
-            req.user = await User.findById(decoded.id).select('-password');
+            const user = await User.findById(decoded.id).select('-password');
+            if (!user) {
+                res.status(401);
+                return next(new Error('User not found'));
+            }
+            req.user = user;
 
             next();
         } catch (error) {
@@ -52,4 +57,25 @@ const admin = (req: Request, res: Response, next: NextFunction) => {
     }
 };
 
-export { protect, admin };
+const optionalProtect = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    let token: string | undefined;
+
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+    ) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as IDecodedToken;
+            const user = await User.findById(decoded.id).select('-password');
+            if (user) {
+                req.user = user;
+            }
+        } catch (error) {
+            // Silence error, proceed as guest
+        }
+    }
+    next();
+};
+
+export { protect, admin, optionalProtect };

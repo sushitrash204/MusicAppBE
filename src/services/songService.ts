@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import Song from '../models/Song';
 import Artist from '../models/Artist';
+import PlaySession from '../models/PlaySession';
+import User from '../models/User';
 
 export const createSong = async (userId: string, songData: any) => {
     const artist = await Artist.findOne({ userId });
@@ -43,8 +45,18 @@ export const getRecentPublicSongs = async (limit: number = 10) => {
         .sort({ createdAt: -1 })
         .limit(limit)
         .populate('artists', 'artistName')
-        .select('title audioUrl coverImage duration plays createdAt artists previewStart')
+        .select('title lyrics audioUrl coverImage duration plays createdAt artists previewStart')
         .lean(); // Use lean() for faster queries
+};
+
+// Get popular public songs by plays (optimized for homepage)
+export const getPopularPublicSongs = async (limit: number = 10) => {
+    return await Song.find({ status: 'public' })
+        .sort({ plays: -1, createdAt: -1 })
+        .limit(limit)
+        .populate('artists', 'artistName')
+        .select('title lyrics audioUrl coverImage duration plays createdAt artists previewStart')
+        .lean();
 };
 
 // Get public songs by artist ID
@@ -52,7 +64,7 @@ export const getSongsByArtistId = async (artistId: string) => {
     return await Song.find({ artists: artistId, status: 'public' })
         .sort({ createdAt: -1 })
         .populate('artists', 'artistName')
-        .select('title audioUrl coverImage duration plays createdAt artists previewStart')
+        .select('title lyrics audioUrl coverImage duration plays createdAt artists previewStart')
         .lean();
 };
 
@@ -164,4 +176,110 @@ export const getSongById = async (id: string) => {
     return await Song.findById(id)
         .populate('artists', 'artistName')
         .populate('genres', 'name');
+};
+
+export const incrementPlayCount = async (songId: string) => {
+    const song = await Song.findById(songId);
+    if (!song) throw new Error('Song not found.');
+
+    // Increment song plays
+    song.plays = (song.plays || 0) + 1;
+    await song.save();
+
+    // Increment totalStreams for all artists of this song
+    await Artist.updateMany(
+        { _id: { $in: song.artists } },
+        { $inc: { totalStreams: 1 } }
+    );
+
+    return song;
+};
+
+export const startPlaySession = async (userId: string, songId: string) => {
+    // Check if song exists
+    const song = await Song.findById(songId);
+    if (!song) throw new Error('Song not found.');
+
+    const user = await User.findById(userId);
+    if (!user) throw new Error('User not found.');
+
+    // --- Logic Bắt Buộc Xem Quảng Cáo ---
+    // Chỉ áp dụng cho tài khoản thường (không phải Premium)
+    if (!user.isPremium) {
+        // Nếu số lượt nghe đã đạt ngưỡng (3 bài)
+        if ((user.songsPlayedSinceLastAd || 0) >= 3) {
+            const now = new Date();
+
+            // Nếu đây là lần đầu chạm ngưỡng, lưu thời gian kích hoạt và chặn lại
+            if (!user.lastAdTrigger) {
+                user.lastAdTrigger = now;
+                await user.save();
+                throw new Error('AD_REQUIRED'); // Báo cho client biết cần hiện quảng cáo
+            }
+
+            // Kiểm tra thời gian đã trôi qua từ lúc kích hoạt
+            const elapsedSeconds = (now.getTime() - user.lastAdTrigger.getTime()) / 1000;
+
+            if (elapsedSeconds < 5) {
+                throw new Error('AD_IN_PROGRESS'); // Vẫn đang trong thời gian chờ quảng cáo
+            }
+
+            // Nếu đã qua 5 giây, reset bộ đếm và cho phép nghe
+            user.songsPlayedSinceLastAd = 0;
+            user.lastAdTrigger = null;
+            await user.save();
+        } else {
+            // Tăng số lượt nghe
+            user.songsPlayedSinceLastAd = (user.songsPlayedSinceLastAd || 0) + 1;
+            await user.save();
+        }
+    }
+    // ----------------------------
+
+    // Create a new pending session
+    const session = new PlaySession({
+        userId,
+        songId,
+        startTime: new Date(),
+        status: 'pending'
+    });
+
+    await session.save();
+    return session._id;
+};
+
+const PLAY_COUNT_THRESHOLD = 30; // 30 seconds required for a valid play
+
+export const confirmPlaySession = async (userId: string, sessionId: string) => {
+    const session = await PlaySession.findById(sessionId);
+
+    if (!session) throw new Error('Session not found or expired.');
+    if (session.userId.toString() !== userId.toString()) throw new Error('Unauthorized session.');
+    if (session.status !== 'pending') throw new Error('Session already processed.');
+
+    // Validate time: must be at least 30 seconds since start
+    const now = new Date();
+    const elapsedSeconds = (now.getTime() - session.startTime.getTime()) / 1000;
+
+    if (elapsedSeconds < PLAY_COUNT_THRESHOLD) {
+        throw new Error(`Song played for less than ${PLAY_COUNT_THRESHOLD} seconds. Potential fraud detected.`);
+    }
+
+    // Session is valid. Update song and artist counts.
+    const song = await Song.findById(session.songId);
+    if (!song) throw new Error('Song not found.');
+
+    song.plays = (song.plays || 0) + 1;
+    await song.save();
+
+    await Artist.updateMany(
+        { _id: { $in: song.artists } },
+        { $inc: { totalStreams: 1 } }
+    );
+
+    // Mark session as completed
+    session.status = 'completed';
+    await session.save();
+
+    return { success: true, plays: song.plays };
 };

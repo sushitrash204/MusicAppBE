@@ -12,6 +12,7 @@ interface IAuthResponse {
     phone: string;
     role: string;
     isArtist: boolean;
+    isPremium?: boolean;
     accessToken: string;
     refreshToken: string;
 }
@@ -64,6 +65,7 @@ const registerUser = async (userData: any): Promise<IAuthResponse> => {
             phone: user.phoneNumber,
             role: user.role,
             isArtist: !!artistDoc,
+            isPremium: user.isPremium,
             accessToken,
             refreshToken
         };
@@ -72,10 +74,29 @@ const registerUser = async (userData: any): Promise<IAuthResponse> => {
     }
 };
 
+const checkPremiumStatus = async (user: IUser) => {
+    if (user.isPremium && user.premiumExpiryDate) {
+        if (new Date() > new Date(user.premiumExpiryDate)) {
+            console.log(`Premium for user ${user.username} expired on ${user.premiumExpiryDate}. Downgrading.`);
+            user.isPremium = false;
+            user.premiumExpiryDate = undefined; // Use undefined or null based on schema, null matches schema better usually but optional field? Schema says Date.
+            // Schema has premiumExpiryDate: { type: Date }.
+            // Mongoose allows setting to null or undefined to unset.
+            // Let's cast to any if needed to set null, or just modify schema definition if needed.
+            // But for now, let's keep it simple.
+            (user as any).premiumExpiryDate = null;
+            await user.save();
+        }
+    }
+};
+
 const loginUser = async (username: string, password: string): Promise<IAuthResponse> => {
     const user = await User.findOne({ username });
 
     if (user && (await user.matchPassword(password))) {
+        // Check Premium Validity
+        await checkPremiumStatus(user);
+
         const { accessToken, refreshToken } = await generateTokens(user._id);
         const artistDoc = await Artist.exists({ userId: user._id, status: 'active' });
 
@@ -87,13 +108,12 @@ const loginUser = async (username: string, password: string): Promise<IAuthRespo
             phone: user.phoneNumber,
             role: user.role,
             isArtist: !!artistDoc,
+            isPremium: user.isPremium,
             accessToken,
             refreshToken
         };
     } else {
-        throw new Error('ERR_WRONG_PASSWORD'); // Or ERR_USER_NOT_FOUND, but security-wise generic is better? 
-        // For now let's stick to what we had: 'Invalid username or password' -> ERR_WRONG_PASSWORD (or maybe new key ERR_LOGIN_FAIL)
-        // Check types: ERR_WRONG_PASSWORD exists.
+        throw new Error('ERR_WRONG_PASSWORD');
     }
 };
 
@@ -119,6 +139,8 @@ const refreshToken = async (requestToken: string): Promise<{ accessToken: string
 
     const user = await User.findById(refreshTokenDoc.user);
     if (!user) throw new Error('ERR_USER_NOT_FOUND');
+
+    await checkPremiumStatus(user);
 
     const newAccessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET as string, {
         expiresIn: '15m',

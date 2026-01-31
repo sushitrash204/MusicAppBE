@@ -1,12 +1,13 @@
 import express from 'express';
 import * as albumController from '../controllers/albumController';
 import { protect } from '../middlewares/authMiddleware';
+import { cacheMiddleware } from '../middlewares/cacheMiddleware';
 import uploadCloud from '../config/cloudinary';
 
 const router = express.Router();
 
 // Public Routes
-router.get('/', albumController.getAllAlbums);
+router.get('/', cacheMiddleware(300), albumController.getAllAlbums);
 router.get('/artist/:artistId', albumController.getAlbumsByArtist);
 
 // Protected Routes (Specific paths first)

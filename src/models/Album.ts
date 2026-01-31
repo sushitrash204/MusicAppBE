@@ -43,6 +43,7 @@ const albumSchema = new mongoose.Schema<IAlbum>({
 });
 
 // Indexes
+albumSchema.index({ title: 'text', description: 'text' });
 albumSchema.index({ artist: 1 }); // Optimize query by artist
 albumSchema.index({ releaseDate: -1 });
 

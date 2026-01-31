@@ -5,7 +5,17 @@ export const getFavorites = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user._id;
         const favorites = await favoriteService.getFavorites(userId);
-        res.status(200).json(favorites);
+
+        // Mark isMe for each artist
+        const favoritesObj = favorites.toObject();
+        if (favoritesObj.artists) {
+            favoritesObj.artists = favoritesObj.artists.map((artist: any) => ({
+                ...artist,
+                isMe: artist.userId && (artist.userId._id || artist.userId).toString() === userId.toString()
+            }));
+        }
+
+        res.status(200).json(favoritesObj);
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

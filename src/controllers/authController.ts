@@ -6,7 +6,9 @@ const setRefreshTokenCookie = (res: Response, refreshToken: string) => {
     const cookieOptions = {
         httpOnly: true,
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-        secure: process.env.NODE_ENV === 'production'
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict' as const,
+        path: '/'
     };
 
     res.cookie('refreshToken', refreshToken, cookieOptions);
