@@ -38,7 +38,8 @@ const allowedOrigins = [
     'http://localhost:3001',
     'http://localhost:3000',
     'https://music-web-smoky.vercel.app',
-    'https://music-web-smoky-nghias-projects-d7d85bef.vercel.app' // Vercel preview domain
+    'https://music-web-smoky-nghias-projects-d7d85bef.vercel.app',
+    'https://musicappbe-9e0b.onrender.com'
 ];
 
 app.use(cors({
