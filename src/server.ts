@@ -18,6 +18,13 @@ import albumRoutes from './routes/albumRoutes';
 import searchRoutes from './routes/searchRoutes';
 import userRoutes from './routes/userRoutes';
 import paymentRoutes from './routes/paymentRoutes';
+
+// Models for indexing
+import Song from './models/Song';
+import Artist from './models/Artist';
+import Album from './models/Album';
+import Playlist from './models/Playlist';
+
 import { notFound, errorHandler } from './middlewares/errorMiddleware';
 
 const app = express();
@@ -47,10 +54,6 @@ app.use(globalLimiter);
 // Connect to Database and Sync Indexes
 connectDB().then(async () => {
     try {
-        const Song = require('./models/Song').default;
-        const Artist = require('./models/Artist').default;
-        const Album = require('./models/Album').default;
-        const Playlist = require('./models/Playlist').default;
         await Promise.all([
             Song.syncIndexes(),
             Artist.syncIndexes(),
@@ -61,6 +64,8 @@ connectDB().then(async () => {
     } catch (e) {
         console.error('Index Sync Error:', e);
     }
+}).catch(err => {
+    console.error('MongoDB connection failed:', err);
 });
 
 // Test Upload Route
