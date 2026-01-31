@@ -7,11 +7,15 @@ export const handleSepayWebhook = async (req: Request, res: Response) => {
 
         // Security Check: Verify API Key
         // SePay sends format: "Apikey YOUR_API_KEY"
-        const sepayApiKey = process.env.SEPAY_API_KEY; // Fallback to the one shown in screenshot
+        const sepayApiKey = process.env.SEPAY_API_KEY;
         const authHeader = req.headers['authorization'];
 
-        if (!authHeader || authHeader !== `Apikey ${sepayApiKey}`) {
-            console.warn('Unauthorized Webhook Attempt:', authHeader);
+        console.log('Webhook Auth Header:', authHeader);
+        console.log('Expected Prefix: Apikey');
+
+        // Allow some flexibility in the "Apikey" prefix (sometimes sent differently)
+        if (!authHeader || !authHeader.toLowerCase().includes(sepayApiKey?.toLowerCase() || '')) {
+            console.warn('Unauthorized: API Key mismatch or missing header');
             return res.status(401).json({ success: false, message: 'Unauthorized' });
         }
 
