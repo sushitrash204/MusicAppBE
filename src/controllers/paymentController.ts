@@ -36,22 +36,23 @@ export const handleSepayWebhook = async (req: Request, res: Response) => {
 
         const { transferContent, content, description, amount, transferAmount } = req.body;
 
-        // Normalize content and amount
-        // Some gateways use 'content', some 'transferContent', some 'description'
-        const transactionContent = (transferContent || content || description || '').toString().toUpperCase();
+        const transactionContent = (transferContent || content || description || '').toString();
         const transactionAmount = Number(amount || transferAmount || 0);
 
-        // Check format: MUSA_USERID or just MUSA USERID
-        // Regex to find "MUSA" followed by ID
-        // Assuming ID is standard MongoID (24 hex chars) or just the string we put there
-        const match = transactionContent.match(/MUSA\s*[:_]?\s*([a-zA-Z0-9]+)/);
+        console.log('Normalized Content:', transactionContent);
+        console.log('Transaction Amount:', transactionAmount);
+
+        // Improved Regex: Find "MUSA" (case insensitive) -> optional separator -> exactly 24 hex characters (standard MongoDB ID)
+        // This is much safer than just taking any characters.
+        const match = transactionContent.match(/MUSA\s*[:_]?\s*([a-fA-F0-9]{24})/i);
 
         if (!match) {
-            console.log('No matching payment code found in content:', transactionContent);
-            return res.json({ success: true, message: 'Ignored: No code found' }); // Return success to acknowledge webhook
+            console.log('❌ No valid MUSA + 24-char ID found in content:', transactionContent);
+            return res.json({ success: true, message: 'Ignored: No valid user ID found' });
         }
 
         const userId = match[1];
+        console.log('✅ Extracted User ID:', userId);
 
         if (transactionAmount < 1000) { // Accept 1000 and above.
             console.log('Amount too small:', transactionAmount);
