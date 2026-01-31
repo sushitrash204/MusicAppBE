@@ -46,7 +46,7 @@ export const handleSepayWebhook = async (req: Request, res: Response) => {
 
         const userId = match[1];
 
-        if (transactionAmount < 10000) { // Example threshold, can be adjusted
+        if (transactionAmount < 1000) { // Accept 1000 and above.
             console.log('Amount too small:', transactionAmount);
             return res.json({ success: true, message: 'Ignored: Amount too small' });
         }
