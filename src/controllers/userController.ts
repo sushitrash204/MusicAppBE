@@ -69,6 +69,7 @@ const updateUserProfile = async (req: Request, res: Response) => {
             role: updatedUser.role,
             phone: updatedUser.phoneNumber,
             isPremium: updatedUser.isPremium,
+            premiumExpiryDate: updatedUser.premiumExpiryDate,
             token: req.headers.authorization?.split(' ')[1] // Keep existing token
         });
 
@@ -106,6 +107,7 @@ const getUserProfile = async (req: Request, res: Response) => {
             role: user.role,
             phone: user.phoneNumber,
             isPremium: user.isPremium,
+            premiumExpiryDate: user.premiumExpiryDate,
             // token is not needed for get profile
         });
     } catch (error) {

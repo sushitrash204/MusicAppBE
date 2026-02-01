@@ -13,6 +13,7 @@ interface IAuthResponse {
     role: string;
     isArtist: boolean;
     isPremium?: boolean;
+    premiumExpiryDate?: Date;
     accessToken: string;
     refreshToken: string;
 }
@@ -66,6 +67,7 @@ const registerUser = async (userData: any): Promise<IAuthResponse> => {
             role: user.role,
             isArtist: !!artistDoc,
             isPremium: user.isPremium,
+            premiumExpiryDate: user.premiumExpiryDate,
             accessToken,
             refreshToken
         };
@@ -109,6 +111,7 @@ const loginUser = async (username: string, password: string): Promise<IAuthRespo
             role: user.role,
             isArtist: !!artistDoc,
             isPremium: user.isPremium,
+            premiumExpiryDate: user.premiumExpiryDate,
             accessToken,
             refreshToken
         };
