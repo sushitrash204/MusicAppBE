@@ -22,6 +22,11 @@ const updateUserProfile = async (req: Request, res: Response) => {
         user.fullName = req.body.fullName || user.fullName;
         user.phoneNumber = req.body.phone || user.phoneNumber;
 
+        // Update email if provided
+        if (req.body.email) {
+            user.emails = [req.body.email];
+        }
+
         // Update avatar if file is uploaded
         if (req.file) {
             // Delete old avatar if it exists
